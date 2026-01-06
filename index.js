@@ -10,6 +10,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Rota teste
+app.get("/", (req, res) => {
+  res.send("🤖 Bot WhatsApp IA ONLINE");
+});
+
+// Webhook UltraMsg
 app.post("/webhook", async (req, res) => {
   try {
     if (req.body?.data?.fromMe) return res.sendStatus(200);
@@ -19,40 +25,38 @@ app.post("/webhook", async (req, res) => {
 
     if (!message || !from) return res.sendStatus(200);
 
+    // limpa número
     from = from.replace("@c.us", "").replace(/\D/g, "");
 
     console.log("📩 Recebido:", message, "de", from);
 
-    // CHAMADA À OPENAI
+    // OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
           content:
-            "Você é um atendente de WhatsApp educado, claro e prestativo. Responda de forma curta.",
+            "Você é um atendente de WhatsApp educado, direto e prestativo. Responda curto.",
         },
-        {
-          role: "user",
-          content: message,
-        },
+        { role: "user", content: message },
       ],
     });
 
     const resposta = completion.choices[0].message.content;
 
-    console.log("📤 Enviando resposta:", resposta);
+    console.log("📤 Enviando:", resposta);
 
-    // ENVIO CORRETO ULTRAMSG
+    // ENVIO UltraMsg (endpoint correto)
     const url = `https://api.ultramsg.com/${process.env.ULTRAMSG_INSTANCE}/messages/chat`;
 
-    const response = await axios.post(url, {
+    const result = await axios.post(url, {
       token: process.env.ULTRAMSG_TOKEN,
       to: from,
       body: resposta,
     });
 
-    console.log("✅ UltraMsg:", response.data);
+    console.log("✅ UltraMsg:", result.data);
     res.sendStatus(200);
   } catch (err) {
     console.error("❌ ERRO:", err.response?.data || err.message);
@@ -60,6 +64,6 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-app.listen(3000, () =>
-  console.log("🚀 Servidor rodando na porta 3000")
-);
+app.listen(3000, () => {
+  console.log("🚀 Servidor rodando na porta 3000");
+});
